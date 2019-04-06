@@ -7,6 +7,8 @@ from torch.utils.data import Dataset,DataLoader
 import os
 from tqdm import tqdm
 import scipy.ndimage
+from scipy import stats
+from sklearn import preprocessing
 
 train_data_dir = "/home/zhizhao/Earthquake/train.csv"
 
@@ -16,18 +18,35 @@ def read_data(data_path):
     return data
 
 def extract_features(df):
-    x = df.acoustic_data.values
-
-    mean = np.mean(x)
-    # median = np.median(x)
-    standard = np.std(x)
-    # max = np.max(x)
+    # TODO normalization
     
-    x_ds = scipy.ndimage.zoom(x,0.5)
-    mean_ds = np.mean(x_ds)
-    standard_ds = np.std(x_ds)
+    x = df.acoustic_data.values
+    
+    mean = np.mean(x)
+    standard = np.std(x)
+    max = np.max(x)
+    min = np.min(x)
+    # median = np.median(x)
+    # variation = mean/standard
+    # skew = stats.skew(x)
+    # kurtosis = stats.kurtosis(x)
+    f1 = np.c_[mean,standard,max,min]
 
-    return np.c_[mean,standard,mean_ds,standard_ds]
+    window_size = 1000
+    x_100 = x[-window_size // 10:]
+    mean_100 = np.mean(x_100)
+    standard_100 = np.std(x_100)
+    max_100 = np.max(x_100)
+    min_100 = np.min(x_100)
+    f2 = np.c_[mean_100,standard_100,max_100,min_100]
+
+    x_10 = x[-window_size // 100:]
+    mean_10 = np.mean(x_10)
+    standard_10 = np.std(x_10)
+    max_10 = np.max(x_10)
+    min_10 = np.min(x_10)
+    f3 = np.c_[mean_10,standard_10,max_10,min_10]
+    return np.c_[f1,f2,f3]
 
 
 
