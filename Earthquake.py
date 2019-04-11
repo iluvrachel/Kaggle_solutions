@@ -18,23 +18,37 @@ plt.plot(train.acoustic_data.values[::sample_freq])
 plt.plot(train.time_to_failure.values[::sample_freq]*100)
 
 def extract_features(z):
+    z_abs = np.abs(z)
     temp = np.c_[
         z.mean(axis=1), 
         z.min(axis=1),
-        z.max(axis=1),
-        np.percentile(np.abs(z), q=[0, 25, 50, 75, 100], axis=1).T, 
-        z.std(axis=1)
+        z.max(axis=1), 
+        z.std(axis=1),
+        np.percentile(np.abs(z), q=[1, 5, 50, 95, 99], axis=1).T,
+        stats.kurtosis(z,axis=1),
+        stats.skew(z,axis=1),
+        z_abs.max(axis=1),
+        z_abs.min(axis=1),
+        z_abs.std(axis=1)
     ]
     # temp.reshape(1,-1)
     return temp
 
 def create_X(x, window_size=1000, sequence_len=150):
     tmp = x.reshape(sequence_len, -1)
+    '''
+    fft = np.fft.fft(x).reshape(sequence_len, -1)
+    fft = fft.real
+    '''
+
+    '''
     return np.c_[
         extract_features(tmp),
         extract_features(tmp[:, -window_size // 10:]),
         extract_features(tmp[:, -window_size // 100:])
     ]
+    '''
+    return extract_features(tmp)
 
 n_features = create_X(train.acoustic_data.values[0:150000]).shape[1]
 print(n_features)
@@ -79,7 +93,7 @@ class LSTM(nn.Module):
         out = self.fc(out[:, -1, :])
         return out.view(-1)
 input_size = n_features
-hidden_size = 32
+hidden_size = 50
 model = LSTM(input_size, hidden_size)
 learning_rate = 0.01
 criterion = nn.MSELoss()
